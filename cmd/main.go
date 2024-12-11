@@ -30,6 +30,7 @@ func main() {
 	dbPort := os.Getenv("DB_PORT")
 	dbSSLMode := os.Getenv("DB_SSLMODE")
 
+
 	
 
 	databaseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
@@ -50,6 +51,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+	
 
 	botAPI.Debug = true
 
@@ -62,4 +64,5 @@ func main() {
 	for update := range updates {
 		bot.HandleUpdate(botAPI, update)
 	}
+
 }

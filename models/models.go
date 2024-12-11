@@ -17,3 +17,17 @@ type User struct {
 	PhoneNumber string
 	Role        Role
 }
+
+type FileData struct {
+	FileID       string
+	FileType     string
+	FileName     string
+	FileExtension string
+}
+
+// Response структура для ответа от API
+type Response struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    string `json:"data"` // Тут может быть ваша конкретная структура данных
+}

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"main/db"
-	"main/roles/team"
-	"main/roles/client"
-	"main/roles/admin"
 	"main/roles"
+	"main/roles/admin"
+	"main/roles/client"
+	"main/roles/team"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -89,7 +89,9 @@ func HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 				}
 		case "ElevenLab","Facebook":
 			if role == "Team" {
-			team.HandleNeiro(bot,update)
+			
+					team.HandleNeiro(bot,update)
+	
 			}
 			if role == "Admin" {
 				team.HandleNeiro(bot,update)
@@ -102,7 +104,7 @@ func HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 				}else {
 					bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "У вас нет прав для этой команды"))
 				}
-			case "Сгенерировать ссылку":
+		case "Сгенерировать ссылку":
 				if role == "Client" {
 				db.GenerateReferralLink(bot,update)
 					}else {
@@ -116,10 +118,28 @@ func HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			case "Team":
 				team.HandleBackCommand(bot, update)
 			}
-        default:
-            bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда"))
+
         }
     }
+
+	if role == "Team" {
+	if update.Message.Video != nil {
+        team.HandleNeiroVideo(bot, update)
+    }
+	if update.Message.Audio != nil {
+        team.HandleNeiroAudio(bot, update)
+    }
+	}
+
+	if role == "Admin" {
+		if update.Message.Video != nil {
+			team.HandleNeiroVideo(bot, update)
+		}
+		if update.Message.Audio != nil {
+			team.HandleNeiroAudio(bot, update)
+		}
+		}
+
 	switch update.Message.Text {
 	case "Статистика", "Изменить роль":
 		if role == "Team" {

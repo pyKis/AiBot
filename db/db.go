@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"time"
 
 	"main/models"
@@ -41,12 +43,27 @@ func CreateTables() error {
         user_id BIGINT REFERENCES users(user_id)
     );`
 
+	filesTable := `
+	CREATE TABLE IF NOT EXISTS files (
+    	id SERIAL PRIMARY KEY,
+    	file_id VARCHAR(255) NOT NULL,
+    	file_type VARCHAR(50) NOT NULL,
+		file_name VARCHAR(255),
+    	file_extension VARCHAR(50),
+    	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);`
+
 	_, err := DB.Exec(usersTable)
 	if err != nil {
 		return fmt.Errorf("ошибка при создании таблицы users: %v", err)
 	}
 
 	_, err = DB.Exec(referralsTable)
+	if err != nil {
+		return fmt.Errorf("ошибка при создании таблицы referrals: %v", err)
+	}
+
+	_, err = DB.Exec(filesTable)
 	if err != nil {
 		return fmt.Errorf("ошибка при создании таблицы referrals: %v", err)
 	}
@@ -242,4 +259,60 @@ func CheckUserExists(userID int64) (bool, error) {
 		return false, err
 	}
 	return exists, nil
+}
+
+func SaveFileToDB(file *models.FileData) error {
+	query := "INSERT INTO files (file_id, file_type, file_name, file_extension) VALUES ($1, $2, $3, $4)"
+	_, err := DB.Exec(query, file.FileID, file.FileType, file.FileName, file.FileExtension)
+	return err
+}
+
+func GetVideoFileFromDB(fileID string) (string, error) {
+	var file models.FileData
+
+	// Запрос для получения метаданных файла
+	query := `SELECT file_id, file_name, file_type, file_extension FROM files WHERE file_id = $1`
+	err := DB.QueryRow(query, fileID).Scan(&file.FileID, &file.FileName, &file.FileType, &file.FileExtension)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("файл с ID %s не найден", fileID)
+		}
+		return "", fmt.Errorf("ошибка при получении файла из базы данных: %v", err)
+	}
+
+	// Указываем путь к папке, в которую будет сохранён файл
+	outputDir := "fileConverter"
+	err = os.MkdirAll(outputDir, os.ModePerm) // Создание директории, если она не существует
+	if err != nil {
+		return "", fmt.Errorf("ошибка при создании директории %s: %v", outputDir, err)
+	}
+
+	// Получаем содержимое файла из базы данных
+	fileContent, err := getFileContentFromDB(fileID) // Эта функция должна быть реализована для получения содержимого файла
+	if err != nil {
+		return "", err
+	}
+
+	// Сохраняем файл на диск
+	filePath := filepath.Join(outputDir, file.FileName) // Путь к сохранённому файлу
+	err = os.WriteFile(filePath, fileContent, 0644) // Запись файла
+	if err != nil {
+		return "", fmt.Errorf("ошибка при записи файла на диск: %v", err)
+	}
+
+	return filePath, nil
+}
+
+// Функция для получения содержимого файла из базы данных
+func getFileContentFromDB(fileID string) ([]byte, error) {
+	// Здесь нужно реализовать логику для получения содержимого файла из базы
+	// Например, если у вас в таблице есть поле типа BYTEA для хранения содержимого файла
+	var content []byte
+	query := `SELECT file_content FROM files WHERE file_id = $1` // Предполагаем, что есть поле для содержимого
+	err := DB.QueryRow(query, fileID).Scan(&content)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении содержимого файла: %v", err)
+	}
+
+	return content, nil
 }

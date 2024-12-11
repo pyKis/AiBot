@@ -33,12 +33,7 @@ func ShowAdminMenu(bot *tgbotapi.BotAPI, update tgbotapi.Update, adminUserID int
 }
 
 func HandleAdminCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, adminUserID int64) {
-	if update.Message.From.ID != adminUserID {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "У вас нет прав администратора.")
-		bot.Send(msg)
-		return
-	}
-
+	
 	switch update.Message.Text {
 	case "Статистика":
 		ShowStatisticsMenu(bot, update)
